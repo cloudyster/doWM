@@ -26,6 +26,9 @@ import (
 // XUtil represents the state of xgbutil.
 var XUtil *xgbutil.XUtil
 
+// Colormap represents the default colormap of the screen
+var Colormap xproto.Colormap
+
 // Config represents the application configuration.
 // tiling window gaps, unfocused/focused window border colors, mod key for all wm actions, window border width, keybinds
 type Config struct {
@@ -130,6 +133,8 @@ type Monitor struct {
 // the current workspace index,the current workspace, atoms for EMWH, if the wm is tiling, the space for tiling
 // windows to be, the different tiling layouts, the wm condig, the mod key.
 type WindowManager struct {
+	conferror     bool
+	screen        *xproto.ScreenInfo
 	conn          *xgb.Conn
 	root          xproto.Window
 	atoms         map[string]xproto.Atom
@@ -262,7 +267,7 @@ func createLayouts() map[int][]Layout {
 }
 
 // read and create config, if certain values, aren't provided, use the default values.
-func createConfig() Config {
+func (wm *WindowManager) createConfig() Config {
 	// Set defaults manually
 	cfg := Config{
 		Gap:            6,
@@ -283,13 +288,29 @@ func createConfig() Config {
 	f, err := os.ReadFile(filepath.Join(home, ".config", "doWM", "doWM.yml"))
 	if err != nil {
 		slog.Error("Couldn't read doWM.yml config file", "error:", err)
+		if wm.conferror {
+			errwinclose(wm.conn)
+		}
+		wm.errwin("doWM.yml file doesnt exist in config folder, after fixing, use mod+shift+r to reload config")
+		wm.conferror = true
 		return cfg
 	}
 
 	if err := yaml.Unmarshal(f, &cfg); err != nil {
 		slog.Error("Couldn't parse doWM.yml config file", "error:", err)
+		if wm.conferror {
+			errwinclose(wm.conn)
+		}
+
+		wm.errwin(fmt.Sprint("Error in config file: ", parseConfigError(err.Error()), "\n", " after fixing, use mod+shift+r to reload config"))
+		wm.conferror = true
 		return cfg
 	}
+
+	if wm.conferror {
+		errwinclose(wm.conn)
+	}
+	wm.conferror = false
 
 	if len(cfg.Layouts) > 0 {
 		lyts := map[int][]Layout{}
@@ -333,7 +354,7 @@ func Create() (*WindowManager, error) {
 	// get root and dimensions of screen
 	setup := xproto.Setup(X)
 	screen := setup.DefaultScreen(X)
-
+	Colormap = screen.DefaultColormap
 	root := screen.Root
 
 	// Gets the current screen resources. Screen resources contains a list
@@ -406,6 +427,8 @@ func Create() (*WindowManager, error) {
 
 	// return the window manager struct
 	return &WindowManager{
+		conferror:     false,
+		screen:        screen,
 		conn:          X,
 		root:          root,
 		monitors:      monitors,
@@ -706,7 +729,7 @@ func (wm *WindowManager) Run() { //nolint:cyclop
 	// wm.cursor()
 
 	// retrieve config and set values
-	cfg := createConfig()
+	cfg := wm.createConfig()
 	wm.config = cfg
 	if len(wm.config.Monitors) != 0 {
 		wm.positionMonitors()
@@ -858,7 +881,7 @@ func (wm *WindowManager) Run() { //nolint:cyclop
 			continue
 		}
 		if event == nil {
-			continue
+			return
 		}
 
 		pointer, ptrerr := xproto.QueryPointer(wm.conn, wm.root).Reply()
@@ -1296,7 +1319,7 @@ func (wm *WindowManager) Run() { //nolint:cyclop
 								}
 							}
 						case "reload-config":
-							cfg := createConfig()
+							cfg := wm.createConfig()
 							wm.config = cfg
 							if len(wm.config.Monitors) != 0 {
 								wm.positionMonitors()
@@ -2225,9 +2248,8 @@ func (wm *WindowManager) onLeaveNotify(event xproto.LeaveNotifyEvent) {
 	err := xproto.ChangeWindowAttributesChecked(
 		wm.conn,
 		event.Event,
-		xproto.CwBackPixel|xproto.CwBorderPixel,
+		xproto.CwBorderPixel,
 		[]uint32{
-			Col, // background
 			Col, // border color
 		},
 	).Check()
@@ -2357,9 +2379,8 @@ func (wm *WindowManager) onEnterNotify(event xproto.EnterNotifyEvent) {
 	err = xproto.ChangeWindowAttributesChecked(
 		wm.conn,
 		event.Event,
-		xproto.CwBackPixel|xproto.CwBorderPixel,
+		xproto.CwBorderPixel,
 		[]uint32{
-			Col, // background
 			Col, // border color
 		},
 	).Check()
@@ -2748,9 +2769,8 @@ func (wm *WindowManager) frame(w xproto.Window, createdBeforeWM bool) {
 	err = xproto.ChangeWindowAttributesChecked(
 		wm.conn,
 		w,
-		xproto.CwBackPixel|xproto.CwBorderPixel|xproto.CwEventMask,
+		xproto.CwBorderPixel|xproto.CwEventMask,
 		[]uint32{
-			Col, // background
 			Col, // border color
 			xproto.EventMaskSubstructureRedirect |
 				xproto.EventMaskSubstructureNotify | xproto.EventMaskKeyPress | xproto.EventMaskKeyRelease,
@@ -2862,7 +2882,6 @@ func (wm *WindowManager) Close() {
 	}
 }
 
-// The end.
 func (wm *WindowManager) setKeyBinds() {
 	// workspace keybinds, ik not very idiomatic but its fine :)
 	wm.config.Keybinds = append(wm.config.Keybinds, []Keybind{
@@ -2886,5 +2905,8 @@ func (wm *WindowManager) setKeyBinds() {
 		wm.createKeybind(&Keybind{Key: "7", Shift: true, Keycode: 0}),
 		wm.createKeybind(&Keybind{Key: "8", Shift: true, Keycode: 0}),
 		wm.createKeybind(&Keybind{Key: "9", Shift: true, Keycode: 0}),
+		wm.createKeybind(&Keybind{Key: "r", Shift: true, Keycode: 0, Role: "reload-config"}),
 	}...)
 }
+
+// The end.
