@@ -10,10 +10,10 @@
       <a href="https://visitorbadge.io/status?path=https%3A%2F%2Fgithub.com%2FBobdaProgrammer%2FdoWM"><img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2FBobdaProgrammer%2FdoWM&label=visitors&labelColor=%23ff8a65&countColor=%23111133" /></a>
       <a href="https://github.com/BobdaProgrammer/doWM/issues" target="_blank">
       <img alt="Issues" src="https://img.shields.io/github/issues/BobdaProgrammer/doWM?style=for-the-badge&logo=bilibili&color=F5E0DC&logoColor=D9E0EE&labelColor=302D41" />
-    </a>  
+    </a>
        <a href="https://github.com/BobdaProgrammer/doWM/blob/main/LICENSE" target="_blank">
       <img alt="License" src="https://img.shields.io/github/license/BobdaProgrammer/doWM?style=for-the-badge&logo=starship&color=ee999f&logoColor=D9E0EE&labelColor=302D41" />
-    </a>  
+    </a>
 </p>
 
 ## Contents
@@ -36,13 +36,13 @@ I highly recommend that if you have any questions that aren't issue related, you
 <div align="center">
 <img src="https://github.com/BobdaProgrammer/doWM-web/blob/main/images/gruvbox.png?raw=true" width="500px">
 <img src="https://github.com/BobdaProgrammer/doWM-web/blob/main/images/pinkgradient.png?raw=true" width="500px">
-  
+
 <img src="https://github.com/BobdaProgrammer/doWM-web/blob/main/images/8windowsweirdlayout.png?raw=true" width="500px">
 <img src="https://github.com/BobdaProgrammer/doWM-web/blob/main/images/fabricnotification.png?raw=true" width="500px">
 
 <img src="https://github.com/BobdaProgrammer/doWM-web/blob/main/images/musicwithnotification.png?raw=true" width="500px">
 <img src="https://github.com/BobdaProgrammer/doWM-web/blob/main/images/workspaceviewergruvbox.png?raw=true" width="500px">
-</div>  
+</div>
 
 -------------
 
@@ -59,7 +59,7 @@ go build -o ./doWM
 make install
 ```
 
-then to see a normal config look at `exampleConfig` folder, you can copy this to ~/.config/doWM and then write your own configuration  
+then to see a normal config look at `exampleConfig` folder, you can copy this to ~/.config/doWM and then write your own configuration
 
 -------------
 
@@ -68,8 +68,8 @@ then to see a normal config look at `exampleConfig` folder, you can copy this to
 
 ```
 mkdir ~/.config/doWM
-cp -r ./exampleConfig/* ~/.config/doWM/ 
-chmod +x ~/.config/doWM/autostart.sh        
+cp -r ./exampleConfig/* ~/.config/doWM/
+chmod +x ~/.config/doWM/autostart.sh
 ```
 
 > [!NOTE]
@@ -92,7 +92,7 @@ You have a few general options:
 - unactive-border-color (the color for the border of unactive windows
 - active-border-color (the color for the border of an active window)
 
-The multi monitor system is fairly simple, you don't need to add it to your config but you can if you want to specify positions for your monitors. The only rule for the positions is they cannot be negative, this means that the monitor that is the highest has a Y of 0, where as ones lower than that could be somehting like 1080, same with X, the one on the furthest left would be 0, then to the right of that could be 1920. Here is an example of two monitors, one it above and to the right and the other below and to the left:
+The multi monitor system is fairly simple, you don't need to add it to your config but you can if you want to specify positions for your monitors. The only rule for the positions is they cannot be negative, this means that the monitor that is the highest has a Y of 0, where as ones lower than that could be something like 1080, same with X, the one on the furthest left would be 0, then to the right of that could be 1920. Here is an example of two monitors, one it above and to the right and the other below and to the left:
 ```yml
 monitors:
   # highest and to the right
@@ -105,7 +105,7 @@ monitors:
 ```
 To move a window between monitors, just drag it between and it will follow
 
-Although there are some default tiling layouts which will serve you well, you can easily customize your tiling layouts. The system works quite simply, in the `layouts:` you would have a list of each of the window numbers you want to have a layout/s for, for example 1 through 5 so you would have layouts for up to 5 windows in a workspace, any more than that and the window would just be placed above the windows to be moved to a seperate workspace or closed. For each window number, you specify `- windows:` for each layout, in side of windows you would have a list of windows, represented like this:
+Although there are some default tiling layouts which will serve you well, you can easily customize your tiling layouts. The system works quite simply, in the `layouts:` you would have a list of each of the window numbers you want to have a layout/s for, for example 1 through 5 so you would have layouts for up to 5 windows in a workspace, any more than that and the window would just be placed above the windows to be moved to a separate workspace or closed. For each window number, you specify `- windows:` for each layout, in side of windows you would have a list of windows, represented like this:
 ```yml
 - x: 0.0 # the X percentage in the tiling space, 0.5 would have the top left corner halfway through the width of the tiling space
   y: 0.0 # the Y percentage in the tiling space
@@ -161,7 +161,7 @@ each keybind either executes a command or plays a role in the wm. Here are all t
 - reload-config (reload doWM.yml)
 - increase-gap (increase gap between windows in tiling temporarily - reset next session)
 - decrease-gap (decrease gap between windows in tiling, also temporary)
-- detach-tiling (sepearate a workspace from global tiling - e.g that workspace could be floating with rest tiling - it is also toggling, so if detached it will re-attach)
+- detach-tiling (separate a workspace from global tiling - e.g that workspace could be floating with rest tiling - it is also toggling, so if detached it will re-attach)
 - next-layout (switch to the next layout for the current window number)
 - resize-x-scale-up (increases the width of the current window)
 - resize-x-scale-down (decreases the width of the current window)
@@ -174,7 +174,7 @@ each keybind either executes a command or plays a role in the wm. Here are all t
 
 each keybind also has a key and a shift option, key is the character of the key (can also be things like "f1" "space" or "return") and shift is a bool for if shift should be pressed or not to register.
 
-for example: 
+for example:
 ```yml
   # When mod + t is pressed then open kitty
   - key: "t"
@@ -206,7 +206,7 @@ doWM supports multiple monitors and you can see how to configure them in the con
 - [x] tiling
 - [x] swap windows in tiling
 - [x] change focus in tiling
-- [x] many layouts 
+- [x] many layouts
 - [x] bar support
 - [x] fullscreen
 - [x] startup commands

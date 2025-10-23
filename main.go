@@ -10,7 +10,7 @@ import (
 func main() {
 	WM, err := wm.Create()
 	if err != nil {
-		slog.Error("Couldn't initialise window manager", "error:", err)
+		slog.Error("Couldn't initialize window manager", "error:", err)
 		return
 	}
 	defer WM.Close()
