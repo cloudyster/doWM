@@ -1,4 +1,4 @@
-# Maintainer: Sam Inglis <https://github.com/BobdaProgrammer>
+# Maintainer: BobdaProgrammer <https://github.com/BobdaProgrammer>
 pkgname=doWM
 pkgver=1.0.3
 pkgrel=1
