@@ -56,21 +56,21 @@ You will want to have go installed
 git clone https://github.com/BobdaProgrammer/doWM
 cd doWM
 go build -o ./doWM
-make install
+make install config
 ```
-
-then to see a normal config look at `exampleConfig` folder, you can copy this to ~/.config/doWM and then write your own configuration
+`make install config` will install doWM and move an an example config into the config folder, you can just run make install and write your own from scratch but the example config is a good place to start
 
 -------------
 
-> [!WARNING]
-> make sure to make the autostart.sh executable and to use a config, otherwise none of your startup commands will run
-
+This is incase you just run `make install`, it is what you can use to copy the default config into the folder
 ```
 mkdir ~/.config/doWM
 cp -r ./exampleConfig/* ~/.config/doWM/
 chmod +x ~/.config/doWM/autostart.sh
 ```
+
+> [!WARNING]
+> Make sure to look through the config, to alter startup programs and keybinds so that you can use doWM out of the box
 
 > [!NOTE]
 > To logout, I suggest you use `kill $(pgrep -o doWM)`
