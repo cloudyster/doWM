@@ -19,4 +19,22 @@ install:
 
 	@echo "Installed successfully!"
 
+config:
+	@echo "Setting up doWM user config..."
+	mkdir -p $(USER_CONFIG)
+	@if [ ! -f $(USER_CONFIG)/autostart.sh ]; then \
+		cp exampleConfig/autostart.sh $(USER_CONFIG)/autostart.sh && \
+		chmod +x $(USER_CONFIG)/autostart.sh && \
+		echo "Installed example autostart.sh"; \
+	else \
+		echo "autostart.sh already exists, skipping..."; \
+	fi
+	@if [ ! -f $(USER_CONFIG)/doWM.yml ]; then \
+		cp exampleConfig/doWM.yml $(USER_CONFIG)/doWM.yml && \
+		echo "Installed example doWM.yml"; \
+	else \
+		echo "doWM.yml already exists, skipping..."; \
+	fi
+	@echo "Config setup complete!"
+
 .PHONY: all install uninstall
