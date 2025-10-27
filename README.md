@@ -85,6 +85,8 @@ Colors are to be written in hex format starting with 0x for example white: 0xfff
 You have a few general options:
 - outer-gap (gap from edge of tiling space to windows)
 - gaps (pixel gaps in tiling)
+- resize-amount (the amount of pixels by which a window will increase/decrease with each resize)
+- auto-reload (wether the WM should auto reload the config when changes are made, the config will not auto update if errors are present)
 - default-tiling (if true, tiling will be enabled on start)
 - auto-fullscreen (if true, windows will auto fullscreen when they request)
 - mod-key (which key should be used for all wm commands)
@@ -201,6 +203,7 @@ doWM supports multiple monitors and you can see how to configure them in the con
 - [x] move window between workspaces
 - [x] focus on hover
 - [x] configuration
+- [x] auto reloading config
 - [x] keybinds
 - [x] floating
 - [x] tiling

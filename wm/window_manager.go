@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/goccy/go-yaml"
+	"github.com/fsnotify/fsnotify"
 	"github.com/jezek/xgb"
 	"github.com/jezek/xgb/randr"
 	"github.com/jezek/xgb/xproto"
@@ -23,29 +23,18 @@ import (
 	"github.com/mattn/go-shellwords"
 )
 
+// for moving and resizing, basically the window that will be moved/resized
+var start xproto.ButtonPressEvent
+var attr *xproto.GetGeometryReply
+
+// Mod key mask
+var mMask uint16
+
 // XUtil represents the state of xgbutil.
 var XUtil *xgbutil.XUtil
 
 // Colormap represents the default colormap of the screen
 var Colormap xproto.Colormap
-
-// Config represents the application configuration.
-// tiling window gaps, unfocused/focused window border colors, mod key for all wm actions, window border width, keybinds
-type Config struct {
-	lyts           map[int][]Layout
-	Layouts        []map[int][]Layout `yaml:"layouts"`
-	Gap            uint32             `yaml:"gaps"`
-	Resize         uint32             `yaml:"resize-amount"`
-	OuterGap       uint32             `yaml:"outer-gap"`
-	StartTiling    bool               `yaml:"default-tiling"`
-	BorderUnactive uint32             `yaml:"unactive-border-color"`
-	BorderActive   uint32             `yaml:"active-border-color"`
-	ModKey         string             `yaml:"mod-key"`
-	BorderWidth    uint32             `yaml:"border-width"`
-	Keybinds       []Keybind          `yaml:"keybinds"`
-	AutoFullscreen bool               `yaml:"auto-fullscreen"`
-	Monitors       []MonitorConfig    `yaml:"monitors"`
-}
 
 // MonitorConfig is the position of monitors defined in the user config
 type MonitorConfig struct {
@@ -133,6 +122,7 @@ type Monitor struct {
 // windows to be, the different tiling layouts, the wm config, the mod key.
 type WindowManager struct {
 	conferror     bool
+	configWatcher *fsnotify.Watcher
 	screen        *xproto.ScreenInfo
 	conn          *xgb.Conn
 	root          xproto.Window
@@ -262,67 +252,6 @@ func createLayouts() map[int][]Layout {
 			},
 		}},
 	}
-}
-
-// read and create config, if certain values, aren't provided, use the default values.
-func (wm *WindowManager) createConfig() Config {
-	// Set defaults manually
-	cfg := Config{
-		Gap:            6,
-		OuterGap:       0,
-		BorderWidth:    3,
-		ModKey:         "Mod1",
-		BorderUnactive: 0x8bd5ca,
-		BorderActive:   0xa6da95,
-		Keybinds:       []Keybind{},
-		lyts:           createLayouts(),
-		Layouts:        []map[int][]Layout{},
-		StartTiling:    false,
-		AutoFullscreen: false,
-		Monitors:       []MonitorConfig{},
-	}
-
-	home, _ := os.UserHomeDir()
-	f, err := os.ReadFile(filepath.Join(home, ".config", "doWM", "doWM.yml"))
-	if err != nil {
-		slog.Error("Couldn't read doWM.yml config file", "error:", err)
-		if wm.conferror {
-			errwinclose(wm.conn)
-		}
-		wm.errwin("doWM.yml file doesnt exist in config folder, after fixing, use mod+shift+r to reload config")
-		wm.conferror = true
-		return cfg
-	}
-
-	if err := yaml.Unmarshal(f, &cfg); err != nil {
-		slog.Error("Couldn't parse doWM.yml config file", "error:", err)
-		if wm.conferror {
-			errwinclose(wm.conn)
-		}
-
-		wm.errwin(fmt.Sprint("Error in config file: ", parseConfigError(err.Error()), "\n", " after fixing, use mod+shift+r to reload config"))
-		wm.conferror = true
-		return cfg
-	}
-
-	if wm.conferror {
-		errwinclose(wm.conn)
-	}
-	wm.conferror = false
-
-	if len(cfg.Layouts) > 0 {
-		lyts := map[int][]Layout{}
-		for _, lyt := range cfg.Layouts {
-			for key, val := range lyt {
-				lyts[key] = val
-				break
-			}
-		}
-
-		cfg.lyts = lyts
-	}
-
-	return cfg
 }
 
 // Create creates the X connection and get the root window, create workspaces and create window manager struct.
@@ -552,6 +481,12 @@ func (wm *WindowManager) createKeybind(kb *Keybind) Keybind {
 }
 
 func (wm *WindowManager) reload(focused xproto.ButtonPressEvent) {
+	if wm.config.AutoReload && wm.configWatcher == nil {
+		wm.configListener()
+	} else if !wm.config.AutoReload && wm.configWatcher != nil {
+		wm.configWatcher.Close()
+		wm.configWatcher = nil
+	}
 	// set the mod key for the wm
 	var mMask uint16
 	switch wm.config.ModKey {
@@ -727,7 +662,7 @@ func (wm *WindowManager) Run() { //nolint:cyclop
 	// wm.cursor()
 
 	// retrieve config and set values
-	cfg := wm.createConfig()
+	cfg := wm.createConfig(false)
 	wm.config = cfg
 	if len(wm.config.Monitors) != 0 {
 		wm.positionMonitors()
@@ -741,7 +676,14 @@ func (wm *WindowManager) Run() { //nolint:cyclop
 		}
 		wm.currMonitor = cm
 	}
-	// TODO: make auto-reload
+	if wm.config.AutoReload {
+		wm.configListener()
+	}
+	defer func() {
+		if wm.configWatcher != nil {
+			wm.configWatcher.Close()
+		}
+	}()
 
 	// for things like polybar, to show workspaces
 	wm.broadcastWorkspace(0)
@@ -786,7 +728,6 @@ func (wm *WindowManager) Run() { //nolint:cyclop
 	}
 
 	// set the mod key for the wm
-	var mMask uint16
 	switch wm.config.ModKey {
 	case "Mod1":
 		mMask = xproto.ModMask1
@@ -844,10 +785,6 @@ func (wm *WindowManager) Run() { //nolint:cyclop
 	if err != nil {
 		slog.Error("Couldn't grab window+c key", "error:", err.Error())
 	}
-
-	// for moving and resizing, basically the window that will be moved/resized
-	var start xproto.ButtonPressEvent
-	var attr *xproto.GetGeometryReply
 
 	// create EMWH atoms
 	atoms := []string{
@@ -1317,7 +1254,7 @@ func (wm *WindowManager) Run() { //nolint:cyclop
 								}
 							}
 						case "reload-config":
-							cfg := wm.createConfig()
+							cfg := wm.createConfig(false)
 							wm.config = cfg
 							if len(wm.config.Monitors) != 0 {
 								wm.positionMonitors()

@@ -1,11 +1,14 @@
 # gap from edge of tiling space to windows
 outer-gap: 0
 
+# gaps for tiling windows
+gaps: 10
+
 # the amount the window will be resized with the keybinds
 resize-amount: 5
 
-# gaps for tiling windows
-gaps: 10
+# wether the WM should auto reload the config when changes are made, (if there is an error in the config, it will keep the old config and not auto update)
+auto-reload: true
 
 # the mod key used for all window manager actions
 # Mod1 = alt
