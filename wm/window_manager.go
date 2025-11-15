@@ -424,6 +424,29 @@ func getKeycodeForKeysym(conn *xgb.Conn, keysym uint32) xproto.Keycode {
 	return 0
 }
 
+// Converts a keysym (layout-agnostic symbol like XK_b) to a keycode (layout-specific)
+func keysymToKeycode(conn *xgb.Conn, target xproto.Keysym) (xproto.Keycode, error) {
+	setup := xproto.Setup(conn)
+	first := setup.MinKeycode
+	last := setup.MaxKeycode
+	count := last - first + 1
+
+	reply, err := xproto.GetKeyboardMapping(conn, first, uint8(count)).Reply()
+	if err != nil {
+		return 0, fmt.Errorf("GetKeyboardMapping failed: %w", err)
+	}
+
+	for kc := first; kc <= last; kc++ {
+		offset := int(kc-first) * int(reply.KeysymsPerKeycode)
+		for i := 0; i < int(reply.KeysymsPerKeycode); i++ {
+			if reply.Keysyms[offset+i] == target {
+				return kc, nil
+			}
+		}
+	}
+	return 0, fmt.Errorf("no keycode for keysym 0x%X", target)
+}
+
 // gets keycode of key and sets it, then tells the X server to notify us when this keybind is pressed.
 func (wm *WindowManager) createKeybind(kb *Keybind) Keybind {
 	code := keybind.StrToKeycodes(XUtil, kb.Key)
