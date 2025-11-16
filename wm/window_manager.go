@@ -104,17 +104,18 @@ type Workspace struct {
 // Monitor is representing a monitor which effectively houses its own workspaces and windows etc. the monitor is
 // actually just a space in the root window
 type Monitor struct {
-	X              int16
-	Y              int16
-	Width          uint16
-	Height         uint16
-	workspaceIndex int
-	Workspaces     []Workspace
-	CurrWorkspace  *Workspace
-	TilingSpace    Space
-	layoutIndex    int
-	tiling         bool
-	crtc           randr.Crtc
+	X                  int16
+	Y                  int16
+	Width              uint16
+	Height             uint16
+	workspaceIndex     int
+	lastWorkspaceIndex int
+	Workspaces         []Workspace
+	CurrWorkspace      *Workspace
+	TilingSpace        Space
+	layoutIndex        int
+	tiling             bool
+	crtc               randr.Crtc
 }
 
 // WindowManager represents the connection, root window, width and height of screen, workspaces,
@@ -337,6 +338,7 @@ func Create() (*WindowManager, error) {
 		}
 		monitors[i].Workspaces = workspaces
 		monitors[i].workspaceIndex = 0
+		monitors[i].lastWorkspaceIndex = 0
 		monitors[i].CurrWorkspace = &workspaces[0]
 		monitors[i].layoutIndex = 0
 		monitors[i].tiling = false
@@ -2119,8 +2121,19 @@ func (wm *WindowManager) switchWorkspace(workspace int) {
 		return
 	}
 
-	if workspace == wm.currMonitor.workspaceIndex {
+	if !wm.config.WorkspaceAutoBackAndForth && workspace == wm.currMonitor.workspaceIndex {
 		return
+	}
+
+	// WorkspaceAutoBackAndForth is enabled
+	if workspace == wm.currMonitor.workspaceIndex {
+		// switch back to last workspace
+		workspace = wm.currMonitor.lastWorkspaceIndex
+		slog.Debug("Switch back to", "workspace", workspace)
+	} else {
+		// remember last workspace for next switch
+		wm.currMonitor.lastWorkspaceIndex = wm.currMonitor.workspaceIndex
+		slog.Debug("Remember", "workspace", wm.currMonitor.workspaceIndex)
 	}
 
 	// unmap all windows in current workspace

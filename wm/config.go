@@ -2,31 +2,33 @@ package wm
 
 import (
 	"fmt"
-	"github.com/fsnotify/fsnotify"
-	"github.com/goccy/go-yaml"
 	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/goccy/go-yaml"
 )
 
 // Config represents the application configuration.
 // tiling window gaps, unfocused/focused window border colors, mod key for all wm actions, window border width, keybinds
 type Config struct {
-	lyts           map[int][]Layout
-	Layouts        []map[int][]Layout `yaml:"layouts"`
-	AutoReload     bool               `yaml:"auto-reload"`
-	Gap            uint32             `yaml:"gaps"`
-	Resize         uint32             `yaml:"resize-amount"`
-	OuterGap       uint32             `yaml:"outer-gap"`
-	StartTiling    bool               `yaml:"default-tiling"`
-	BorderUnactive uint32             `yaml:"unactive-border-color"`
-	BorderActive   uint32             `yaml:"active-border-color"`
-	ModKey         string             `yaml:"mod-key"`
-	BorderWidth    uint32             `yaml:"border-width"`
-	Keybinds       []Keybind          `yaml:"keybinds"`
-	AutoFullscreen bool               `yaml:"auto-fullscreen"`
-	Monitors       []MonitorConfig    `yaml:"monitors"`
+	lyts                      map[int][]Layout
+	Layouts                   []map[int][]Layout `yaml:"layouts"`
+	AutoReload                bool               `yaml:"auto-reload"`
+	Gap                       uint32             `yaml:"gaps"`
+	Resize                    uint32             `yaml:"resize-amount"`
+	OuterGap                  uint32             `yaml:"outer-gap"`
+	StartTiling               bool               `yaml:"default-tiling"`
+	BorderUnactive            uint32             `yaml:"unactive-border-color"`
+	BorderActive              uint32             `yaml:"active-border-color"`
+	ModKey                    string             `yaml:"mod-key"`
+	BorderWidth               uint32             `yaml:"border-width"`
+	Keybinds                  []Keybind          `yaml:"keybinds"`
+	AutoFullscreen            bool               `yaml:"auto-fullscreen"`
+	WorkspaceAutoBackAndForth bool               `yaml:"workspace-auto-back-and-forth"`
+	Monitors                  []MonitorConfig    `yaml:"monitors"`
 }
 
 func (wm *WindowManager) configListener() {
@@ -82,19 +84,20 @@ func (wm *WindowManager) createConfig(auto bool) Config {
 	}
 	// Set defaults manually
 	cfg := Config{
-		AutoReload:     false,
-		Gap:            6,
-		OuterGap:       0,
-		BorderWidth:    3,
-		ModKey:         "Mod1",
-		BorderUnactive: 0x8bd5ca,
-		BorderActive:   0xa6da95,
-		Keybinds:       []Keybind{},
-		lyts:           createLayouts(),
-		Layouts:        []map[int][]Layout{},
-		StartTiling:    false,
-		AutoFullscreen: false,
-		Monitors:       []MonitorConfig{},
+		AutoReload:                false,
+		Gap:                       6,
+		OuterGap:                  0,
+		BorderWidth:               3,
+		ModKey:                    "Mod1",
+		BorderUnactive:            0x8bd5ca,
+		BorderActive:              0xa6da95,
+		Keybinds:                  []Keybind{},
+		lyts:                      createLayouts(),
+		Layouts:                   []map[int][]Layout{},
+		StartTiling:               false,
+		AutoFullscreen:            false,
+		WorkspaceAutoBackAndForth: false,
+		Monitors:                  []MonitorConfig{},
 	}
 
 	home, _ := os.UserHomeDir()

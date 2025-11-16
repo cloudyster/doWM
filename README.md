@@ -93,6 +93,7 @@ You have a few general options:
 - border-width (border width of windows)
 - unactive-border-color (the color for the border of unactive windows
 - active-border-color (the color for the border of an active window)
+- workspace-auto-back-and-forth (whether switching to the current workspace number switches to the previous workspace, default is false)
 
 The multi monitor system is fairly simple, you don't need to add it to your config but you can if you want to specify positions for your monitors. The only rule for the positions is they cannot be negative, this means that the monitor that is the highest has a Y of 0, where as ones lower than that could be something like 1080, same with X, the one on the furthest left would be 0, then to the right of that could be 1920. Here is an example of two monitors, one it above and to the right and the other below and to the left:
 ```yml
