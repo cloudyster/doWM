@@ -2132,9 +2132,9 @@ func (wm *WindowManager) switchWorkspace(workspace int) {
 		slog.Debug("Switch back to", "workspace", workspace)
 	} else {
 		// remember last workspace for next switch
-		wm.currMonitor.lastWorkspaceIndex = wm.currMonitor.workspaceIndex
 		slog.Debug("Remember", "workspace", wm.currMonitor.workspaceIndex)
 	}
+	wm.currMonitor.lastWorkspaceIndex = wm.currMonitor.workspaceIndex
 
 	// unmap all windows in current workspace
 	for _, frame := range wm.currMonitor.CurrWorkspace.windowList {
